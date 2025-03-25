@@ -114,7 +114,7 @@ class AppointmentUI(ctk.CTkFrame):
         try:
             patient_id = int(patient_id)
             self.appointment_textbox.delete("1.0", "end")
-            appointments = get_appointment_by_patient(patient_id)
+            appointments = get_appointments_by_patient(patient_id)
             
             if not appointments:
                 self.appointment_textbox.insert("end", f"No appointments found for patient ID: {patient_id}")
