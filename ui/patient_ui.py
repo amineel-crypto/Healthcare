@@ -188,18 +188,6 @@ class PatientUI(ctk.CTkFrame):
         )
         add_button.pack(side="left", padx=10)
 
-        search_button = ctk.CTkButton(
-            button_frame,
-            text="🔍 Search Patient",
-            command=self.search_by_name,
-            fg_color="#3498db",
-            hover_color="#2980b9",
-            font=("Helvetica", 14, "bold"),
-            corner_radius=8,
-            height=40
-        )
-        search_button.pack(side="left", padx=10)
-
     def create_appointment_section(self):
         self.appointment_section = ctk.CTkScrollableFrame(self.content_frame, fg_color="#000")
         
@@ -231,6 +219,18 @@ class PatientUI(ctk.CTkFrame):
         # Input Fields
         input_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
         input_frame.pack(fill="x", padx=20, pady=10)
+
+        # Patient Name
+        patient_frame = ctk.CTkFrame(input_frame, fg_color="transparent")
+        patient_frame.pack(fill="x", pady=8)
+        ctk.CTkLabel(patient_frame, text="👤 Patient Name:", width=20, font=("Helvetica", 14)).pack(side="left", padx=5)
+        self.patient_name_entry = ctk.CTkEntry(
+            patient_frame,
+            width=300,
+            font=("Helvetica", 14),
+            corner_radius=8
+        )
+        self.patient_name_entry.pack(side="left", padx=5, fill="x", expand=True)
 
         # Doctor Selection
         doctor_frame = ctk.CTkFrame(input_frame, fg_color="transparent")
@@ -345,9 +345,13 @@ class PatientUI(ctk.CTkFrame):
         search_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
         search_frame.pack(fill="x", padx=20, pady=10)
 
-        ctk.CTkLabel(search_frame, text="🔍 Search by Name:", width=20, font=("Helvetica", 14)).pack(side="left", padx=5)
+        # Create a frame for the search input and button
+        search_input_frame = ctk.CTkFrame(search_frame, fg_color="transparent")
+        search_input_frame.pack(fill="x", pady=8)
+
+        ctk.CTkLabel(search_input_frame, text="🔍 Search by Name:", width=20, font=("Helvetica", 14)).pack(side="left", padx=5)
         self.search_entry = ctk.CTkEntry(
-            search_frame,
+            search_input_frame,
             width=300,
             font=("Helvetica", 14),
             corner_radius=8
@@ -355,14 +359,15 @@ class PatientUI(ctk.CTkFrame):
         self.search_entry.pack(side="left", padx=5, fill="x", expand=True)
 
         search_button = ctk.CTkButton(
-            search_frame,
-            text="Search",
+            search_input_frame,
+            text="🔍 Search",
             command=self.search_by_name,
             fg_color="#3498db",
             hover_color="#2980b9",
             font=("Helvetica", 14, "bold"),
             corner_radius=8,
-            height=40
+            height=40,
+            width=120
         )
         search_button.pack(side="left", padx=10)
 
@@ -491,7 +496,7 @@ class PatientUI(ctk.CTkFrame):
 
     def schedule_appointment(self):
         # Get selected patient and doctor IDs
-        patient_name = self.name_entry.get().strip()
+        patient_name = self.patient_name_entry.get().strip()
         if not patient_name:
             messagebox.showerror("Error", "Please enter a patient name first")
             return
@@ -581,7 +586,7 @@ class PatientUI(ctk.CTkFrame):
         self.result_textbox.delete("1.0", "end")
         
         # Get the patient name
-        patient_name = self.name_entry.get().strip()
+        patient_name = self.patient_name_entry.get().strip()
         if not patient_name:
             messagebox.showerror("Error", "Please enter a patient name first")
             return
