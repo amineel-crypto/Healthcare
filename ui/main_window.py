@@ -10,6 +10,7 @@ class MainWindow(ctk.CTk):
         self.title("Medical Management System")
         self.geometry("800x600")
         ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("green")
         # Create a tab view for navigation
         self.tab_view = ctk.CTkTabview(self)
         self.tab_view.pack(fill="both", expand=True)
