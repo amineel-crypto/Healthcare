@@ -85,6 +85,8 @@ class PatientUI(ctk.CTkFrame):
         self.patient_section.pack_forget()
         self.appointment_section.pack(fill="both", expand=True)
         self.search_section.pack_forget()
+        # Load doctors when showing the appointment section
+        self.load_doctors()
 
     def show_search_section(self):
         self.patient_section.pack_forget()
@@ -395,10 +397,23 @@ class PatientUI(ctk.CTkFrame):
                 cursor = conn.cursor()
                 cursor.execute("SELECT doctor_id, name, specialization FROM Doctors")
                 doctors = cursor.fetchall()
+                
+                if not doctors:
+                    messagebox.showwarning("Warning", "No doctors found in the database. Please add doctors first.")
+                    return
+                
+                # Format the doctor options
                 doctor_options = [f"{d[0]} - {d[1]} ({d[2]})" for d in doctors]
+                
+                # Update the dropdown values
                 self.doctor_dropdown.configure(values=doctor_options)
+                
+                # Set the first doctor as default if available
                 if doctor_options:
                     self.doctor_var.set(doctor_options[0])
+                else:
+                    self.doctor_var.set("No doctors available")
+                    
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to load doctors: {str(e)}")
             finally:
@@ -504,9 +519,9 @@ class PatientUI(ctk.CTkFrame):
         doctor_id = self.doctor_var.get().split(" - ")[0]
         
         # Get date and time
-        date = self.date_entry.get()
-        time = self.time_entry.get()
-        reason = self.reason_entry.get()
+        date = self.date_entry.get().strip()
+        time = self.time_entry.get().strip()
+        reason = self.reason_entry.get().strip()
 
         # Validate inputs
         if not all([patient_name, doctor_id, date, time, reason]):
@@ -514,7 +529,27 @@ class PatientUI(ctk.CTkFrame):
             return
 
         try:
-            # Parse and validate time
+            # Parse and validate time format (HH:MM)
+            if not time or len(time) != 5 or time[2] != ':':
+                messagebox.showerror("Error", "Invalid time format. Please use HH:MM format (e.g., 09:30)")
+                return
+                
+            hours, minutes = map(int, time.split(':'))
+            if not (0 <= hours <= 23 and 0 <= minutes <= 59):
+                messagebox.showerror("Error", "Invalid time. Hours must be 00-23 and minutes 00-59")
+                return
+
+            # Parse and validate date format (YYYY-MM-DD)
+            if not date or len(date) != 10 or date[4] != '-' or date[7] != '-':
+                messagebox.showerror("Error", "Invalid date format. Please use YYYY-MM-DD format (e.g., 2024-03-20)")
+                return
+                
+            year, month, day = map(int, date.split('-'))
+            if not (1 <= month <= 12 and 1 <= day <= 31):
+                messagebox.showerror("Error", "Invalid date. Month must be 01-12 and day 01-31")
+                return
+
+            # Validate appointment time is within working hours
             appointment_time = datetime.strptime(time, "%H:%M").time()
             if appointment_time < datetime.strptime("08:00", "%H:%M").time() or \
                appointment_time > datetime.strptime("15:00", "%H:%M").time():
@@ -524,8 +559,8 @@ class PatientUI(ctk.CTkFrame):
             # Combine date and time
             appointment_datetime = f"{date} {time}"
             datetime.strptime(appointment_datetime, "%Y-%m-%d %H:%M")
-        except ValueError:
-            messagebox.showerror("Error", "Invalid date or time format. Use YYYY-MM-DD and HH:MM")
+        except ValueError as e:
+            messagebox.showerror("Error", f"Invalid date or time format: {str(e)}\nPlease use YYYY-MM-DD for date and HH:MM for time")
             return
 
         # Check for appointment conflicts
@@ -563,11 +598,15 @@ class PatientUI(ctk.CTkFrame):
                     messagebox.showerror("Error", "Patient already has an appointment on this day.")
                     return
                 
+                # Get doctor's cabinet number
+                cursor.execute("SELECT cabinet_number FROM Doctors WHERE doctor_id = ?", (doctor_id,))
+                cabinet_number = cursor.fetchone()[0]
+                
                 # Insert appointment
                 cursor.execute("""
-                    INSERT INTO Appointments (patient_id, doctor_id, appointment_date, reason)
-                    VALUES (?, ?, ?, ?)
-                """, (patient_id, doctor_id, appointment_datetime, reason))
+                    INSERT INTO Appointments (patient_id, doctor_id, appointment_date, reason, cabinet_number)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (patient_id, doctor_id, appointment_datetime, reason, cabinet_number))
                 conn.commit()
                 messagebox.showinfo("Success", "Appointment scheduled successfully!")
                 self.clear_appointment_form()
@@ -596,7 +635,7 @@ class PatientUI(ctk.CTkFrame):
             if conn is not None:
                 cursor = conn.cursor()
                 
-                # Get patient's appointments
+                # Get patient's appointments with doctor details
                 cursor.execute("""
                     SELECT 
                         a.appointment_id,

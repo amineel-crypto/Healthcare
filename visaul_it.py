@@ -43,7 +43,7 @@ sns.lineplot(x=unique_condition_counts.index, y=unique_condition_counts.values, 
 plt.title('Frequency of Medical Conditions (Unique Patients)', fontsize=16)
 plt.xlabel('Medical Condition', fontsize=14)
 plt.ylabel('Number of Unique Patients', fontsize=14)
-plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels for readability
+plt.xticks(rotation=100, ha='right')  # Rotate x-axis labels for readability
 plt.tight_layout()
 plt.grid(axis='y', linestyle='--', alpha=0.7)  # Add gridlines for better readability
 plt.show()

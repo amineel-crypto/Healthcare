@@ -49,18 +49,24 @@ def initialize_db():
                     reason TEXT,
                     cabinet_number INTEGER NOT NULL,
                     FOREIGN KEY (patient_id) REFERENCES Patients(patient_id),
-                    FOREIGN KEY (doctor_id) REFERENCES Doctors(doctor_id),
-                    FOREIGN KEY (cabinet_number) REFERENCES Doctors(cabinet_number),
-                    UNIQUE (doctor_id, appointment_date),
-                    UNIQUE (cabinet_number, appointment_date)
+                    FOREIGN KEY (doctor_id) REFERENCES Doctors(doctor_id)
                 )
             ''')
-            
-            # Create index for faster appointment lookups
-            cursor.execute('''
-                CREATE INDEX IF NOT EXISTS idx_appointment_date 
-                ON Appointments(appointment_date)
-            ''')
+
+            # Add default doctors if the table is empty
+            cursor.execute("SELECT COUNT(*) FROM Doctors")
+            if cursor.fetchone()[0] == 0:
+                default_doctors = [
+                    ("Dr. Smith", "Cardiology", 101),
+                    ("Dr. Johnson", "Pediatrics", 102),
+                    ("Dr. Williams", "Neurology", 103),
+                    ("Dr. Brown", "Dermatology", 104),
+                    ("Dr. Davis", "Orthopedics", 105)
+                ]
+                cursor.executemany(
+                    "INSERT INTO Doctors (name, specialization, cabinet_number) VALUES (?, ?, ?)",
+                    default_doctors
+                )
             
             conn.commit()
             print("Database initialized successfully")
